@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stock Management</title>
+  <style>
+    /* Basic reset and typography */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 1rem;
+      background: #f5f5f5;
+    }
+
+    h1 {
+      margin-bottom: 1rem;
+    }
+
+    /* Form styling */
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      border: 1px solid #ccc;
+      padding: 1rem;
+      background-color: #fff;
+      border-radius: 4px;
+    }
+
+    form label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+
+    form input[type="text"],
+    form input[type="number"] {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    form input[type="file"] {
+      padding: 0.5rem 0;
+    }
+
+    form button {
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      background-color: #4caf50;
+      border: none;
+      color: #fff;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+      align-self: flex-end;
+      margin-top: auto;
+    }
+
+    form button:hover {
+      background-color: #45a049;
+    }
+
+    /* Table styling */
+    .table-container {
+      overflow-x: auto;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px; /* ensure table scrolls horizontally on narrow screens */
+    }
+
+    th, td {
+      padding: 0.75rem;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      background-color: #efefef;
+    }
+
+    td img {
+      max-width: 80px;
+      max-height: 80px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      object-fit: cover;
+    }
+
+    button.edit, button.delete, button.save, button.cancel {
+      cursor: pointer;
+      padding: 0.4rem 0.6rem;
+      margin: 0 0.2rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: #fff;
+      transition: background-color 0.3s;
+    }
+
+    button.edit:hover {
+      background-color: #2196f3;
+      color: #fff;
+      border-color: #2196f3;
+    }
+
+    button.delete:hover {
+      background-color: #f44336;
+      color: #fff;
+      border-color: #f44336;
+    }
+
+    button.save:hover {
+      background-color: #4caf50;
+      color: #fff;
+      border-color: #4caf50;
+    }
+
+    button.cancel:hover {
+      background-color: #9e9e9e;
+      color: #fff;
+      border-color: #9e9e9e;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      form {
+        flex-direction: column;
+      }
+      table {
+        min-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Stock Management</h1>
+
+  <!-- Add new item form -->
+  <form id="stockForm">
+    <div style="flex: 1 1 200px;">
+      <label for="itemName">Item Name</label>
+      <input type="text" id="itemName" placeholder="e.g. Widget A" required />
+    </div>
+    <div style="flex: 1 1 120px;">
+      <label for="itemQuantity">Quantity</label>
+      <input type="number" id="itemQuantity" placeholder="e.g. 100" required />
+    </div>
+    <div style="flex: 1 1 220px;">
+      <label for="itemPicture">Picture</label>
+      <input type="file" id="itemPicture" accept="image/*" />
+    </div>
+    <button type="submit">Add Item</button>
+  </form>
+
+  <!-- Table container for added items -->
+  <div class="table-container">
+    <table id="stockTable">
+      <thead>
+        <tr>
+          <th style="width: 25%;">Item Name</th>
+          <th style="width: 15%;">Quantity</th>
+          <th style="width: 25%;">Picture</th>
+          <th style="width: 35%;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Items will be injected here dynamically -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // On-page data storage (synchronized with localStorage)
+    let items = [];
+
+    const stockForm = document.getElementById('stockForm');
+    const itemNameInput = document.getElementById('itemName');
+    const itemQuantityInput = document.getElementById('itemQuantity');
+    const itemPictureInput = document.getElementById('itemPicture');
+    const stockTableBody = document.querySelector('#stockTable tbody');
+
+    // Load items from localStorage when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      const storedItems = localStorage.getItem('stockItems');
+      if (storedItems) {
+        items = JSON.parse(storedItems);
+        renderItems();
+      }
+    });
+
+    // Form submission handler: add a new item
+    stockForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = itemNameInput.value.trim();
+      const quantity = parseInt(itemQuantityInput.value.trim()) || 0;
+      let pictureBase64 = '';
+
+      // Convert picture to base64 if provided
+      if (itemPictureInput.files && itemPictureInput.files[0]) {
+        pictureBase64 = await toBase64(itemPictureInput.files[0]);
+      }
+
+      const newItem = {
+        id: Date.now(),
+        name,
+        quantity,
+        picture: pictureBase64
+      };
+
+      items.push(newItem);
+      saveAndRender();
+
+      // Reset form
+      itemNameInput.value = '';
+      itemQuantityInput.value = '';
+      itemPictureInput.value = '';
+    });
+
+    // Convert file to base64
+    function toBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
+    }
+
+    // Save items to localStorage and re-render
+    function saveAndRender() {
+      localStorage.setItem('stockItems', JSON.stringify(items));
+      renderItems();
+    }
+
+    // Render items in the table
+    function renderItems() {
+      stockTableBody.innerHTML = '';
+      items.forEach((item) => {
+        const row = document.createElement('tr');
+
+        // Item Name (editable)
+        const nameTd = document.createElement('td');
+        nameTd.textContent = item.name;
+        row.appendChild(nameTd);
+
+        // Quantity (editable)
+        const quantityTd = document.createElement('td');
+        quantityTd.textContent = item.quantity;
+        row.appendChild(quantityTd);
+
+        // Picture
+        const pictureTd = document.createElement('td');
+        if (item.picture) {
+          const img = document.createElement('img');
+          img.src = item.picture;
+          pictureTd.appendChild(img);
+        } else {
+          pictureTd.textContent = 'No picture';
+        }
+        row.appendChild(pictureTd);
+
+        // Actions
+        const actionsTd = document.createElement('td');
+
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.className = 'edit';
+        editBtn.addEventListener('click', () => startEditItem(item.id, row));
+        actionsTd.appendChild(editBtn);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.className = 'delete';
+        deleteBtn.addEventListener('click', () => deleteItem(item.id));
+        actionsTd.appendChild(deleteBtn);
+
+        row.appendChild(actionsTd);
+        stockTableBody.appendChild(row);
+      });
+    }
+
+    // Start editing an item in the table
+    function startEditItem(itemId, row) {
+      const itemIndex = items.findIndex((i) => i.id === itemId);
+      if (itemIndex === -1) return;
+
+      const item = items[itemIndex];
+      row.innerHTML = '';
+
+      // Editable fields
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = item.name;
+
+      const quantityInput = document.createElement('input');
+      quantityInput.type = 'number';
+      quantityInput.value = item.quantity;
+
+      // Picture preview
+      const pictureInput = document.createElement('input');
+      pictureInput.type = 'file';
+      pictureInput.accept = 'image/*';
+
+      // Table cells
+      const nameTd = document.createElement('td');
+      nameTd.appendChild(nameInput);
+
+      const quantityTd = document.createElement('td');
+      quantityTd.appendChild(quantityInput);
+
+      const pictureTd = document.createElement('td');
+      if (item.picture) {
+        const img = document.createElement('img');
+        img.src = item.picture;
+        pictureTd.appendChild(img);
+      } else {
+        pictureTd.textContent = 'No picture';
+      }
+      pictureTd.appendChild(document.createElement('br'));
+      pictureTd.appendChild(pictureInput);
+
+      const actionsTd = document.createElement('td');
+
+      const saveBtn = document.createElement('button');
+      saveBtn.textContent = 'Save';
+      saveBtn.className = 'save';
+      saveBtn.addEventListener('click', async () => {
+        const updatedName = nameInput.value.trim();
+        const updatedQuantity = parseInt(quantityInput.value.trim()) || 0;
+
+        let newPicture = item.picture;
+        if (pictureInput.files && pictureInput.files[0]) {
+          newPicture = await toBase64(pictureInput.files[0]);
+        }
+
+        items[itemIndex] = {
+          ...item,
+          name: updatedName,
+          quantity: updatedQuantity,
+          picture: newPicture
+        };
+        saveAndRender();
+      });
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.className = 'cancel';
+      cancelBtn.addEventListener('click', () => {
+        // Simply re-render to go back
+        renderItems();
+      });
+
+      actionsTd.appendChild(saveBtn);
+      actionsTd.appendChild(cancelBtn);
+
+      row.appendChild(nameTd);
+      row.appendChild(quantityTd);
+      row.appendChild(pictureTd);
+      row.appendChild(actionsTd);
+    }
+
+    // Delete item
+    function deleteItem(itemId) {
+      items = items.filter((i) => i.id !== itemId);
+      saveAndRender();
+    }
+  </script>
+</body>
+</html>
