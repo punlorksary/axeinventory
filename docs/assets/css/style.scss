@@ -1,4 +1,166 @@
+//
+// style.scss
+//
+// SCSS stylesheet for AxeInventory stock management
+//
 
-// This empty SCSS file with front matter is required for Jekyll
-// The actual styles are in main.css
-@import "main";
+// Variables
+$font-stack: Arial, sans-serif;
+$primary-color: #4caf50;
+$secondary-color: #2196f3;
+$danger-color: #f44336;
+$gray-border: #ccc;
+$gray-background: #f5f5f5;
+$light-gray: #efefef;
+
+// Mixins
+@mixin transition($property, $duration: 0.3s) {
+  transition: #{$property} #{$duration};
+}
+
+// Global reset
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: $font-stack;
+  margin: 1rem;
+  background: $gray-background;
+}
+
+// Headings
+h1 {
+  margin-bottom: 1rem;
+}
+
+// Form
+form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border: 1px solid $gray-border;
+  padding: 1rem;
+  background-color: #fff;
+  border-radius: 4px;
+
+  label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+  }
+
+  input[type="text"],
+  input[type="number"] {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid $gray-border;
+  }
+
+  input[type="file"] {
+    padding: 0.5rem 0;
+  }
+
+  button[type="submit"] {
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    background-color: $primary-color;
+    border: none;
+    color: #fff;
+    border-radius: 4px;
+    @include transition(background-color);
+
+    &:hover {
+      background-color: darken($primary-color, 10%);
+    }
+  }
+}
+
+// Table
+.table-container {
+  overflow-x: auto;
+  background-color: #fff;
+  border: 1px solid $gray-border;
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px; // ensures table scrolls horizontally on narrow screens
+
+  th,
+  td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    background-color: $light-gray;
+  }
+
+  td img {
+    max-width: 80px;
+    max-height: 80px;
+    border: 1px solid $gray-border;
+    border-radius: 4px;
+    object-fit: cover;
+  }
+}
+
+// Action buttons
+button.edit,
+button.delete,
+button.save,
+button.cancel {
+  cursor: pointer;
+  padding: 0.4rem 0.6rem;
+  margin: 0 0.2rem;
+  border: 1px solid $gray-border;
+  border-radius: 4px;
+  background-color: #fff;
+  @include transition(background-color);
+}
+
+button.edit:hover {
+  background-color: $secondary-color;
+  color: #fff;
+  border-color: $secondary-color;
+}
+
+button.delete:hover {
+  background-color: $danger-color;
+  color: #fff;
+  border-color: $danger-color;
+}
+
+button.save:hover {
+  background-color: $primary-color;
+  color: #fff;
+  border-color: $primary-color;
+}
+
+button.cancel:hover {
+  background-color: #9e9e9e;
+  color: #fff;
+  border-color: #9e9e9e;
+}
+
+// Responsive adjustments
+@media (max-width: 600px) {
+  form {
+    flex-direction: column;
+  }
+
+  table {
+    min-width: 100%;
+  }
+}
